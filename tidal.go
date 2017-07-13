@@ -7,6 +7,7 @@ import (
 	"io/ioutil"
 	"net/http"
 	"net/url"
+	"strconv"
 	"strings"
 )
 
@@ -146,7 +147,7 @@ func (session *Session) GetAlbum(albumId int) (Album, error) {
 	var album Album
 	albumEndpoint := fmt.Sprintf("albums/%d", albumId)
 
-	if err := session.MappedApiRequest(albumEndpoint, nil, map[string]string{}, &album); err != nil {
+	if err := session.MappedApiRequest(albumEndpoint, nil, nil, &album); err != nil {
 		return album, err
 	}
 
@@ -157,7 +158,7 @@ func (session *Session) GetTrack(trackId int) (Track, error) {
 	var track Track
 	trackEndpoint := fmt.Sprintf("tracks/%d", trackId)
 
-	if err := session.MappedApiRequest(trackEndpoint, nil, map[string]string{}, &track); err != nil {
+	if err := session.MappedApiRequest(trackEndpoint, nil, nil, &track); err != nil {
 		return track, err
 	}
 
@@ -168,7 +169,7 @@ func (session *Session) GetArtist(artistId int) (Artist, error) {
 	var artist Artist
 	artistEndpoint := fmt.Sprintf("artists/%d", artistId)
 
-	if err := session.MappedApiRequest(artistEndpoint, nil, map[string]string{}, &artist); err != nil {
+	if err := session.MappedApiRequest(artistEndpoint, nil, nil, &artist); err != nil {
 		return artist, err
 	}
 
@@ -220,14 +221,24 @@ func (session *Session) GetAlbumItems(albumId int) ([]Track, error) {
 		TotalNumberOfItems int `json:"totalNumberOfItems"`
 	}
 
+	offset := 0
 	itemsEndpoint := fmt.Sprintf("albums/%d/items", albumId)
 
-	if err := session.MappedApiRequest(itemsEndpoint, nil, map[string]string{}, &itemsResponse); err != nil {
-		return items, err
-	}
+	for {
+		params := map[string]string{"offset": strconv.Itoa(offset)}
+		if err := session.MappedApiRequest(itemsEndpoint, params, nil, &itemsResponse); err != nil {
+			return items, err
+		}
 
-	for _, item := range itemsResponse.Items {
-		items = append(items, item.Item)
+		for _, item := range itemsResponse.Items {
+			items = append(items, item.Item)
+		}
+
+		offset += itemsResponse.Limit
+
+		if offset >= itemsResponse.TotalNumberOfItems {
+			break
+		}
 	}
 
 	return items, nil
