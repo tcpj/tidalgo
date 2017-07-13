@@ -139,7 +139,6 @@ func (session *Session) MappedApiRequest(
 	if err = json.Unmarshal(data, structure); err != nil {
 		return err
 	}
-	fmt.Println(string(data))
 	return nil
 }
 
@@ -178,9 +177,9 @@ func (session *Session) GetArtist(artistId int) (Artist, error) {
 
 func (session *Session) GetStreamUrl(trackId int) (string, error) {
 	var streamResponse struct {
-		Codec         string `json:"codec"`
-		EncryptionKey string `json:"encryptionKey"`
-		URL           string `json:"url"`
+		Codec         string   `json:"codec"`
+		EncryptionKey string   `json:"encryptionKey"`
+		Urls          []string `json:"urls"`
 	}
 
 	streamEndpoint := fmt.Sprintf("tracks/%d/urlpostpaywall", trackId)
@@ -204,8 +203,7 @@ func (session *Session) GetStreamUrl(trackId int) (string, error) {
 			   But here is your encryption key: %s`,
 			streamResponse.EncryptionKey)
 	}
-	fmt.Println(streamResponse)
-	return streamResponse.URL, nil
+	return streamResponse.Urls[0], nil
 
 }
 
