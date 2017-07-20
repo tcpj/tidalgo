@@ -226,7 +226,9 @@ func (session *Session) GetAlbumItems(albumId int) ([]Track, error) {
 
 	for {
 		params := map[string]string{"offset": strconv.Itoa(offset)}
-		if err := session.MappedApiRequest(itemsEndpoint, params, nil, &itemsResponse); err != nil {
+		if err := session.MappedApiRequest(itemsEndpoint,
+			params, nil, &itemsResponse); err != nil {
+
 			return items, err
 		}
 
@@ -242,4 +244,43 @@ func (session *Session) GetAlbumItems(albumId int) ([]Track, error) {
 	}
 
 	return items, nil
+}
+
+func (session *Session) GetFavoriteAlbums() ([]Album, error) {
+	albums := make([]Album, 0)
+
+	var albumsResponse struct {
+		Items []struct {
+			Item Album  `json:"item"`
+			Type string `json:"type"`
+		} `json:"items"`
+		Limit              int `json:"limit"`
+		Offset             int `json:"offset"`
+		TotalNumberOfItems int `json:"totalNumberOfItems"`
+	}
+
+	offset := 0
+	favoritesAlbumEndpoint := fmt.Sprintf("users/%d/favorites/albums", session.UserId)
+
+	for {
+		params := map[string]string{"offset": strconv.Itoa(offset)}
+		if err := session.MappedApiRequest(favoritesAlbumEndpoint,
+			params, nil, &albumsResponse); err != nil {
+
+			return albums, err
+		}
+
+		for _, item := range albumsResponse.Items {
+			albums = append(albums, item.Item)
+		}
+
+		offset += albumsResponse.Limit
+
+		if offset >= albumsResponse.TotalNumberOfItems {
+			break
+		}
+	}
+
+	return albums, nil
+
 }
