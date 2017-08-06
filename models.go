@@ -36,5 +36,36 @@ type Track struct {
 	Duration    int      `json:"duration"`
 	Id          int      `json:"id"`
 	Title       string   `json:"title"`
+	Version     string   `json:"version"`
 	TrackNumber int      `json:"trackNumber"`
+}
+
+type FavoriteResponse struct {
+	Limit              int `json:"limit"`
+	Offset             int `json:"offset"`
+	TotalNumberOfItems int `json:"totalNumberOfItems"`
+}
+
+type FavoriteAlbumsResponse struct {
+	FavoriteResponse
+	Items []struct {
+		Item Album  `json:"item"`
+		Type string `json:"type"`
+	} `json:"items"`
+}
+
+type FavoriteArtistsResponse struct {
+	FavoriteResponse
+	Items []struct {
+		Item Artist `json:"item"`
+		Type string `json:"type"`
+	} `json:"items"`
+}
+
+type FavoriteTracksResponse struct {
+	FavoriteResponse
+	Items []struct {
+		Item Track  `json:"item"`
+		Type string `json:"type"`
+	} `json:"items"`
 }

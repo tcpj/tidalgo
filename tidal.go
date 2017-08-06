@@ -12,6 +12,9 @@ import (
 )
 
 const API_URL string = "https://api.tidalhifi.com/v1/"
+const Q_FLAC string = "LOSSLESS"
+const Q_HI string = "HIGH"
+const Q_LO string = "LOW"
 
 func PrepareEndpoint(baseUrl *url.URL, endpoint string) (string, error) {
 	endpointUrl, err := url.Parse(endpoint)
@@ -176,7 +179,42 @@ func (session *Session) GetArtist(artistId int) (Artist, error) {
 	return artist, nil
 }
 
-func (session *Session) GetStreamUrl(trackId int) (string, error) {
+func (session *Session) GetArtistAlbums(artistId int) ([]Album, error) {
+	albums := make([]Album, 0)
+
+	var albumsResponse struct {
+		Items              []Album `json:"items"`
+		Limit              int     `json:"limit"`
+		Offset             int     `json:"offset"`
+		TotalNumberOfItems int     `json:"totalNumberOfItems"`
+	}
+
+	offset := 0
+	albumsEndpoint := fmt.Sprintf("artists/%d/albums", artistId)
+
+	for {
+		params := map[string]string{"offset": strconv.Itoa(offset)}
+		if err := session.MappedApiRequest(albumsEndpoint,
+			params, nil, &albumsResponse); err != nil {
+
+			return albums, err
+		}
+
+		for _, item := range albumsResponse.Items {
+			albums = append(albums, item)
+		}
+
+		offset += albumsResponse.Limit
+
+		if offset >= albumsResponse.TotalNumberOfItems {
+			break
+		}
+	}
+
+	return albums, nil
+}
+
+func (session *Session) GetStreamUrl(trackId int, quality string) (string, error) {
 	var streamResponse struct {
 		Codec         string   `json:"codec"`
 		EncryptionKey string   `json:"encryptionKey"`
@@ -185,7 +223,7 @@ func (session *Session) GetStreamUrl(trackId int) (string, error) {
 
 	streamEndpoint := fmt.Sprintf("tracks/%d/urlpostpaywall", trackId)
 	params := map[string]string{
-		"audioquality":      "LOSSLESS",
+		"audioquality":      quality,
 		"urlusagemode":      "STREAM",
 		"assetpresentation": "FULL",
 	}
@@ -248,23 +286,14 @@ func (session *Session) GetAlbumItems(albumId int) ([]Track, error) {
 
 func (session *Session) GetFavoriteAlbums() ([]Album, error) {
 	albums := make([]Album, 0)
-
-	var albumsResponse struct {
-		Items []struct {
-			Item Album  `json:"item"`
-			Type string `json:"type"`
-		} `json:"items"`
-		Limit              int `json:"limit"`
-		Offset             int `json:"offset"`
-		TotalNumberOfItems int `json:"totalNumberOfItems"`
-	}
+	var albumsResponse FavoriteAlbumsResponse
 
 	offset := 0
-	favoritesAlbumEndpoint := fmt.Sprintf("users/%d/favorites/albums", session.UserId)
+	favoriteAlbumsEndpoint := fmt.Sprintf("users/%d/favorites/albums", session.UserId)
 
 	for {
 		params := map[string]string{"offset": strconv.Itoa(offset)}
-		if err := session.MappedApiRequest(favoritesAlbumEndpoint,
+		if err := session.MappedApiRequest(favoriteAlbumsEndpoint,
 			params, nil, &albumsResponse); err != nil {
 
 			return albums, err
@@ -282,5 +311,67 @@ func (session *Session) GetFavoriteAlbums() ([]Album, error) {
 	}
 
 	return albums, nil
+
+}
+
+func (session *Session) GetFavoriteTracks() ([]Track, error) {
+	tracks := make([]Track, 0)
+
+	var tracksResponse FavoriteTracksResponse
+
+	offset := 0
+	favoriteTracksEndpoint := fmt.Sprintf("users/%d/favorites/tracks", session.UserId)
+
+	for {
+		params := map[string]string{"offset": strconv.Itoa(offset)}
+		if err := session.MappedApiRequest(favoriteTracksEndpoint,
+			params, nil, &tracksResponse); err != nil {
+
+			return tracks, err
+		}
+
+		for _, item := range tracksResponse.Items {
+			tracks = append(tracks, item.Item)
+		}
+
+		offset += tracksResponse.Limit
+
+		if offset >= tracksResponse.TotalNumberOfItems {
+			break
+		}
+	}
+
+	return tracks, nil
+
+}
+
+func (session *Session) GetFavoriteArtists() ([]Artist, error) {
+	artists := make([]Artist, 0)
+
+	var artistsResponse FavoriteArtistsResponse
+
+	offset := 0
+	favoriteArtistsEndpoint := fmt.Sprintf("users/%d/favorites/artists", session.UserId)
+
+	for {
+		params := map[string]string{"offset": strconv.Itoa(offset)}
+		if err := session.MappedApiRequest(favoriteArtistsEndpoint,
+			params, nil, &artistsResponse); err != nil {
+
+			return artists, err
+		}
+
+		for _, item := range artistsResponse.Items {
+			artists = append(artists, item.Item)
+		}
+
+		offset += artistsResponse.Limit
+
+		if offset >= artistsResponse.TotalNumberOfItems {
+			break
+		}
+	}
+
+	return artists, nil
 
 }
