@@ -214,7 +214,7 @@ func (session *Session) GetArtistAlbums(artistId int) ([]Album, error) {
 	return albums, nil
 }
 
-func (session *Session) GetStreamUrl(trackId int, quality string) (string, error) {
+func (session *Session) GetStreamUrls(trackId int, quality string) ([]string, error) {
 	var streamResponse struct {
 		Codec         string   `json:"codec"`
 		EncryptionKey string   `json:"encryptionKey"`
@@ -234,7 +234,7 @@ func (session *Session) GetStreamUrl(trackId int, quality string) (string, error
 		map[string]string{"Origin": "https://listen.tidal.com"},
 		&streamResponse); err != nil {
 
-		return "", err
+		return nil, err
 	}
 
 	if streamResponse.EncryptionKey != "" {
@@ -242,7 +242,7 @@ func (session *Session) GetStreamUrl(trackId int, quality string) (string, error
 			   But here is your encryption key: %s`,
 			streamResponse.EncryptionKey)
 	}
-	return streamResponse.Urls[0], nil
+	return streamResponse.Urls, nil
 
 }
 
