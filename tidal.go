@@ -50,8 +50,12 @@ func NewSession(username string, password string, apiKey string) (*Session, erro
 	}
 
 	loginValues := url.Values{}
+	loginValues.Add("User-Agent", "TIDAL_ANDROID/679 okhttp/3.3.1")
 	loginValues.Add("username", username)
 	loginValues.Add("password", password)
+	loginValues.Add("clientUniqueKey", "9116f4461454fa12")
+	loginValues.Add("clientVersion", "1.12.1")
+	loginValues.Add("token", apiKey)
 
 	client := &http.Client{}
 
@@ -61,6 +65,7 @@ func NewSession(username string, password string, apiKey string) (*Session, erro
 	}
 
 	loginRequest.Header.Add("X-Tidal-Token", apiKey)
+	loginRequest.Header.Add("User-Agent", "TIDAL_ANDROID/679 okhttp/3.3.1")
 	loginRequest.Header.Add("Content-Type", "application/x-www-form-urlencoded")
 
 	response, err := client.Do(loginRequest)
